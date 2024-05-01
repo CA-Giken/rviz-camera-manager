@@ -2,7 +2,6 @@
 
 import math
 import PySimpleGUI as sg
-import layout
 import rospy
 from view_controller_msgs.msg import CameraPlacement
 from geometry_msgs.msg import Point, Vector3, Pose
@@ -88,6 +87,12 @@ class CameraManager:
         self.cams = cams
         return self.cams
     
+    def loadCamsFromLocal(self):
+        cam_list = rospy.get_param("/cam_list")
+        cams = [Cam(_["parentKey"], _["key"], _["label"], _["x"], _["y"], _["z"], _["rx"], _["ry"], _["rz"]) for _ in cam_list]
+        self.cams = cams
+        return self.cams
+    
     def updateCurrentCam(self, cp: Pose):
         self.x = cp.position.x
         self.y = cp.position.y
@@ -102,14 +107,7 @@ if __name__ == "__main__":
     contents = build()
     window = sg.Window("Rviz Camera Manager", contents, finalize=True)
     
-    cams = app.loadCams([
-        Cam("", "_test_", "test", 0, 0, 0, 0, 0, 0),
-        Cam("", "_test2_", "test2", 10, 0, 0, 0, 0, 0),
-        Cam("", "_test3_", "test3", 20, 0, 0, 0, 0, 0),
-        Cam("", "_test4_", "test4", 30, 0, 0, 0, 0, 0),
-        Cam("", "_test5_", "test5", 40, 0, 0, 0, 0, 0),
-        Cam("", "_test6_", "test6", 50, 0, 0, 0, 0, 0)
-    ])
+    cams = app.loadCamsFromLocal()
     treeData = buildTree(cams)
     window["-tree-"].update(treeData)
 

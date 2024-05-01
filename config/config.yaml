@@ -1,0 +1,28 @@
+cam_list:
+  - parentKey: ""
+    key: "_test_"
+    label: "テスト"
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    rx: 0.0
+    ry: 0.0
+    rz: 0.0
+  - parentKey: ""
+    key: "_test2_"
+    label: "テスト2"
+    x: 30.0
+    y: 30.0
+    z: 30.0
+    rx: 0.0
+    ry: 0.0
+    rz: 0.0
+  - parentKey: ""
+    key: "_test3_"
+    label: "テスト3"
+    x: 10.0
+    y: 10.0
+    z: 10.0
+    rx: 0.0
+    ry: 0.0
+    rz: 0.0

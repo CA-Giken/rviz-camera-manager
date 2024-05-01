@@ -18,7 +18,7 @@ roscore
 
 ```
 source ~/catkin_ws/devel/setup.bash
-rosrun rviz-camera-manager main.py
+roslaunch rviz-camera-manager main.launch
 ```
 
 # Import & Export config file

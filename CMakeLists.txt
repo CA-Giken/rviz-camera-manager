@@ -13,7 +13,6 @@ catkin_package()
 
 set(SRC_FILES
   scripts/main.py
-  scripts/layout.py
 )
 
 
