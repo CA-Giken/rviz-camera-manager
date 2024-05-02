@@ -1,4 +1,4 @@
 <launch>
-    <rosparam command="load" file="$(find rviz-camera-manager)/config/config.yaml" />
-    <node name="camera-manager" pkg="rviz-camera-manager" type="main.py" output="screen" />
+    <rosparam command="load" file="$(find rviz_camera_manager)/config/config.yaml" />
+    <node name="camera_manager" pkg="rviz_camera_manager" type="main.py" output="screen" />
 </launch>

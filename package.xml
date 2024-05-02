@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>rviz-camera-manager</name>
+  <name>rviz_camera_manager</name>
   <version>0.0.0</version>
-  <description>The rviz-camera-manager package</description>
+  <description>The rviz_camera_manager package</description>
 
   <author email="kyosuke.hiraizumi@ca-giken.com">Kyosuke Hiraizumi</author>
   <maintainer email="kyosuke.hiraizumi@ca-giken.com">CA-Giken</maintainer>
