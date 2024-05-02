@@ -22,14 +22,9 @@ def find_first_index(lst, key, value):
 
 def build():
     contents = [
+        posTable(), 
         [
-            sg.Column([[sg.Text()], [sg.Text(text="Position")], [sg.Text(text="Rotation")]]),
-            sg.Column([[sg.Text(text="X")], [sg.InputText(key="x")], [sg.InputText(key="rx")]]),
-            sg.Column([[sg.Text(text="Y")], [sg.InputText(key="y")], [sg.InputText(key="ry")]]),
-            sg.Column([[sg.Text(text="Z")], [sg.InputText(key="z")], [sg.InputText(key="rz")]])
-        ], 
-        [
-            sg.Tree(key="-tree-", data=sg.TreeData(), enable_events=True, show_expanded=True)
+            sg.Tree(key="-tree-", data=sg.TreeData(), headings=[], enable_events=True, show_expanded=True, col0_width=34)
         ], 
         [
             sg.Button(button_text="Add", key="-add-"), sg.Button(button_text="Edit", key="-edit-"), sg.Button(button_text="Remove", key="-remove-")
@@ -37,6 +32,15 @@ def build():
     ]
     
     return contents
+
+def posTable():
+    table = [
+        sg.Column([[sg.Text()], [sg.Text(text="Position", size=(8, 1))], [sg.Text(text="Rotation", size=(8, 1))]]),
+        sg.Column([[sg.Text(text="X")], [sg.InputText(key="x", size=(6, 1))], [sg.InputText(key="rx", size=(6, 1))]]),
+        sg.Column([[sg.Text(text="Y")], [sg.InputText(key="y", size=(6, 1))], [sg.InputText(key="ry", size=(6, 1))]]),
+        sg.Column([[sg.Text(text="Z")], [sg.InputText(key="z", size=(6, 1))], [sg.InputText(key="rz", size=(6, 1))]])
+    ], 
+    return table
 
 def buildTree(cams: "list[Cam]"):
     treeData = sg.TreeData()
@@ -46,14 +50,9 @@ def buildTree(cams: "list[Cam]"):
 
 def buildAdd():
     contents = [
+        posTable(),
         [
-            sg.Column([[sg.Text()], [sg.Text(text="Position")], [sg.Text(text="Rotation")]]),
-            sg.Column([[sg.Text(text="X")], [sg.InputText(key="x")], [sg.InputText(key="rx")]]),
-            sg.Column([[sg.Text(text="Y")], [sg.InputText(key="y")], [sg.InputText(key="ry")]]),
-            sg.Column([[sg.Text(text="Z")], [sg.InputText(key="z")], [sg.InputText(key="rz")]])
-        ], 
-        [
-            sg.Text(text="ラベル"), sg.InputText(key="_label_")  
+            sg.Text(text="ラベル"), sg.InputText(key="_label_", size=(15, 1))  
         ],
         [
             sg.Button(button_text="Confirm", key="-add-confirm-"), sg.Button(button_text="Cancel", key="-add-cancel-")
@@ -63,12 +62,7 @@ def buildAdd():
 
 def buildEdit():
     contents = [
-        [
-            sg.Column([[sg.Text()], [sg.Text(text="Position")], [sg.Text(text="Rotation")]]),
-            sg.Column([[sg.Text(text="X")], [sg.InputText(key="x")], [sg.InputText(key="rx")]]),
-            sg.Column([[sg.Text(text="Y")], [sg.InputText(key="y")], [sg.InputText(key="ry")]]),
-            sg.Column([[sg.Text(text="Z")], [sg.InputText(key="z")], [sg.InputText(key="rz")]])
-        ], 
+        posTable(),
         [
             sg.Text(text="ラベル"), sg.InputText(key="_label_")  
         ],
@@ -177,6 +171,9 @@ if __name__ == "__main__":
     
     contents = build()
     window = sg.Window("Rviz Camera Manager", contents, finalize=True)
+    
+    # ツリーヘッダー消去
+    window['-tree-'].Widget['show'] = 'tree'
     
     cams = app.loadCamsFromLocal()
     treeData = buildTree(cams)
