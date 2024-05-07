@@ -176,7 +176,7 @@ class CameraManager:
         self.isAutosave = True
         
     def getCam(self, camKey):
-        cam = next(filter(lambda cam: cam.key == camKey, self.cams))
+        cam = next(filter(lambda cam: cam.key == camKey, self.cams), None)
         return cam
     
     def addCam(self, cam: Cam):
@@ -316,11 +316,19 @@ if __name__ == "__main__":
         window["ry"].update(str(math.degrees(euler.y)))
         window["rz"].update(str(math.degrees(euler.z)))
 
+        
         if event == sg.WIN_CLOSED:
             print('exit')
             break
         
         # ツリー操作
+        ## 選択中のCamのキーを格納
+        if len(values["-tree-"]) == 0: 
+            keyForPopup = ""
+        else: 
+            keyForPopup = values["-tree-"][0]
+        
+        # ダブルクリックでカメラプリセットへカメラ移動
         if event == '-tree-double-click-':
             # ツリー内のアイテム未選択時は反応しない
             if len(values["-tree-"]) == 0: continue 
