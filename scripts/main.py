@@ -65,10 +65,10 @@ def build():
 
 def posTable(readonly: bool):
     table = [
-        sg.Column([[sg.Text()], [sg.Text(text="Position", size=(8, 1))], [sg.Text(text="Rotation", size=(8, 1))]]),
-        sg.Column([[sg.Text(text="X")], [sg.InputText(key="x", size=(6, 1), readonly=True)], [sg.InputText(key="rx", size=(6, 1), readonly=readonly)]]),
-        sg.Column([[sg.Text(text="Y")], [sg.InputText(key="y", size=(6, 1), readonly=True)], [sg.InputText(key="ry", size=(6, 1), readonly=readonly)]]),
-        sg.Column([[sg.Text(text="Z")], [sg.InputText(key="z", size=(6, 1), readonly=True)], [sg.InputText(key="rz", size=(6, 1), readonly=readonly)]])
+        sg.Column([[sg.Text()], [sg.Text(text="Eye", size=(8, 1))], [sg.Text(text="Focus", size=(8, 1))], [sg.Text(text="Up", size=(8, 1))]]),
+        sg.Column([[sg.Text(text="X")], [sg.InputText(key="x", size=(6, 1), readonly=readonly)], [sg.InputText(key="fx", size=(6, 1), readonly=readonly)], [sg.InputText(key="ux", size=(6, 1), readonly=readonly)]]),
+        sg.Column([[sg.Text(text="Y")], [sg.InputText(key="y", size=(6, 1), readonly=readonly)], [sg.InputText(key="fy", size=(6, 1), readonly=readonly)], [sg.InputText(key="uy", size=(6, 1), readonly=readonly)]]),
+        sg.Column([[sg.Text(text="Z")], [sg.InputText(key="z", size=(6, 1), readonly=readonly)], [sg.InputText(key="fz", size=(6, 1), readonly=readonly)], [sg.InputText(key="uz", size=(6, 1), readonly=readonly)]])
     ], 
     return table
 
@@ -128,14 +128,27 @@ def validateForm(*args):
 ######################
 
 class Cam(dict):
-    def __init__(self, parentKey: str, key: str, label: str, pose: Pose, isLabel = False):
+    def __init__(self, parentKey: str, key: str, label: str, eye: Vector3, focus: Vector3, up: Vector3, isLabel = False):
         super().__init__()
         self.__dict__ = self
         self.parentKey = parentKey
         self.key = key
         self.label = label
-        self.pose = pose
+        self.cp = CameraPlacement()
         
+        frame_id = "camera_frame"
+        self.cp.eye.point.x = eye.x
+        self.cp.eye.point.y = eye.y
+        self.cp.eye.point.z = eye.z
+        self.cp.eye.header.frame_id = frame_id
+        self.cp.focus.point.x = focus.x
+        self.cp.focus.point.y = focus.y
+        self.cp.focus.point.z = focus.z
+        self.cp.focus.header.frame_id = frame_id
+        self.cp.up.vector.x = up.x
+        self.cp.up.vector.y = up.y
+        self.cp.up.vector.z = up.z
+        self.cp.up.header.frame_id = frame_id
         self.isLabel = isLabel
         
     def toCameraPlacement(self):
@@ -165,13 +178,13 @@ class CameraManager:
     def __init__(self):
         # 状態管理
         self.cams: list[Cam] = []
-        self.pose = Pose(Point(0.0, 0.0, 0.0), Quaternion(0.0, 0.0, 0.0, 0.0))
-        
+        self.cp = CameraPlacement()
+                
         # ROS管理
         rospy.init_node("camera_manager", anonymous = True)
         self.pub = rospy.Publisher("/rviz/camera_placement", CameraPlacement, queue_size = 1)
-        self.sub = rospy.Subscriber("/rviz/current_camera_pose", Pose, self.updateCurrentCam)
-
+        self.sub = rospy.Subscriber("/rviz/current_camera_placement", CameraPlacement, self.updateCurrentCam)
+        
         # 設定管理
         self.isAutosave = True
         
@@ -206,7 +219,7 @@ class CameraManager:
             return
         if cam.isLabel == True:
             return 
-        self.pub.publish(cam.toCameraPlacement())
+        self.pub.publish(cam.cp)
         return cam
         
     def loadCams(self, cams: "list[Cam]"):
@@ -220,10 +233,9 @@ class CameraManager:
             _["parentKey"],
             _["key"],
             _["label"],
-            Pose(
-                Point(_["x"], _["y"], _["z"]),
-                Quaternion(_["rx"], _["ry"], _["rz"], _["rw"])
-            ),
+            Vector3(_["eye"]["x"], _["eye"]["y"], _["eye"]["z"]),
+            Vector3(_["focus"]["x"], _["focus"]["y"], _["focus"]["z"]),
+            Vector3(_["up"]["x"], _["up"]["y"], _["up"]["z"]),
             _["isLabel"]
             ) for _ in cam_list]
         self.cams = cams
@@ -239,13 +251,15 @@ class CameraManager:
                 "parentKey" : cam.parentKey,
                 "key": cam.key,
                 "label": cam.label,
-                "x": float(cam.pose.position.x), # numpy.float64 -> float
-                "y": float(cam.pose.position.y),
-                "z": float(cam.pose.position.z),
-                "rx": float(cam.pose.orientation.x),
-                "ry": float(cam.pose.orientation.y),
-                "rz": float(cam.pose.orientation.z),
-                "rw": float(cam.pose.orientation.w),
+                "x": cam.cp.eye.point.x,
+                "y": cam.cp.eye.point.y,
+                "z": cam.cp.eye.point.z,
+                "fx": cam.cp.focus.point.x,
+                "fy": cam.cp.focus.point.y,
+                "fz": cam.cp.focus.point.z,
+                "ux": cam.cp.up.vector.x,
+                "uy": cam.cp.up.vector.y,
+                "uz": cam.cp.up.vector.z,
                 "isLabel": cam.isLabel
             }
             for cam in self.cams
@@ -263,18 +277,8 @@ class CameraManager:
         #         sort_keys=False
         #     )
     
-    def updateCurrentCam(self, pose: Pose):
-        self.pose = pose
-        print(
-            "[",
-            self.pose.position.x,
-            self.pose.position.y,
-            self.pose.position.z,
-            self.pose.orientation.x,
-            self.pose.orientation.y,
-            self.pose.orientation.z,
-            self.pose.orientation.w,
-            "]")
+    def updateCurrentCam(self, cp: CameraPlacement):
+        self.cp = cp
         
     def getLabels(self):
         labelCams = filter(lambda cam: cam.isLabel == True, self.cams)
@@ -308,13 +312,15 @@ if __name__ == "__main__":
         event, values = window.read(timeout=100, timeout_key='-timeout-')    
         popupEvent, popupValues = popup.read(timeout=100, timeout_key='-timeout-popup-') if not popup == None else (None, None)
 
-        window["x"].update(str(app.pose.position.x))
-        window["y"].update(str(app.pose.position.y))
-        window["z"].update(str(app.pose.position.z))
-        euler = euler_to_quaternion(app.pose.orientation)
-        window["rx"].update(str(math.degrees(euler.x)))
-        window["ry"].update(str(math.degrees(euler.y)))
-        window["rz"].update(str(math.degrees(euler.z)))
+        window["x"].update(str(app.cp.eye.point.x))
+        window["y"].update(str(app.cp.eye.point.y))
+        window["z"].update(str(app.cp.eye.point.z))
+        window["fx"].update(str(app.cp.focus.point.z))
+        window["fy"].update(str(app.cp.focus.point.z))
+        window["fz"].update(str(app.cp.focus.point.z))
+        window["ux"].update(str(app.cp.up.vector.z))
+        window["uy"].update(str(app.cp.up.vector.z))
+        window["uz"].update(str(app.cp.up.vector.z))
 
         
         if event == sg.WIN_CLOSED:
@@ -343,36 +349,28 @@ if __name__ == "__main__":
         if event == '-add-':
             # popup.close()
             popup = sg.Window("視点登録", buildAdd(), finalize=True)
-            popup["x"].update(str(app.pose.position.x))
-            popup["y"].update(str(app.pose.position.y))
-            popup["z"].update(str(app.pose.position.z))
-            euler = euler_to_quaternion(app.pose.orientation)
-            popup["rx"].update(str(math.degrees(euler.x)))
-            popup["ry"].update(str(math.degrees(euler.y)))
-            popup["rz"].update(str(math.degrees(euler.z)))
+            popup["x"].update(str(app.cp.eye.point.x))
+            popup["y"].update(str(app.cp.eye.point.y))
+            popup["z"].update(str(app.cp.eye.point.z))
+            popup["fx"].update(str(app.cp.focus.point.z))
+            popup["fy"].update(str(app.cp.focus.point.z))
+            popup["fz"].update(str(app.cp.focus.point.z))
+            popup["ux"].update(str(app.cp.up.vector.z))
+            popup["uy"].update(str(app.cp.up.vector.z))
+            popup["uz"].update(str(app.cp.up.vector.z))
             continue
         
         if popupEvent == '-add-confirm-':
             if validateForm(popupValues["x"], popupValues["y"], popupValues["z"], popupValues["rx"], popupValues["ry"], popupValues["rz"]) == False:
                 sg.popup_error('無効な値が入力されています。')
                 continue
-            newPose = Pose(
-                Point(
-                    float(popupValues["x"]),
-                    float(popupValues["y"]),
-                    float(popupValues["z"])
-                ), euler_to_quaternion(
-                    Vector3(
-                        math.radians(float(popupValues["rx"])),
-                        math.radians(float(popupValues["ry"])),
-                        math.radians(float(popupValues["rz"]))
-                    )
-                ))
             newCam = Cam(
                 "", 
                 uuid.uuid4().hex,
                 popupValues["_label_"],
-                newPose
+                Vector3(float(popupValues["x"]), float(popupValues["y"]), float(popupValues["z"])),
+                Vector3(float(popupValues["fx"]), float(popupValues["fy"]), float(popupValues["fz"])),
+                Vector3(float(popupValues["ux"]), float(popupValues["uy"]), float(popupValues["uz"])),
             )
             app.addCam(newCam)
             popup.close()
@@ -396,36 +394,28 @@ if __name__ == "__main__":
             # popup.close()
             popup = sg.Window("視点編集", buildEdit(), finalize=True)
             popup["_label_"].update(cam.label)
-            popup["x"].update(str(app.pose.position.x))
-            popup["y"].update(str(app.pose.position.y))
-            popup["z"].update(str(app.pose.position.z))
-            euler = euler_to_quaternion(app.pose.orientation)
-            popup["rx"].update(str(math.degrees(euler.x)))
-            popup["ry"].update(str(math.degrees(euler.y)))
-            popup["rz"].update(str(math.degrees(euler.z)))
+            popup["x"].update(str(app.cp.eye.point.x))
+            popup["y"].update(str(app.cp.eye.point.y))
+            popup["z"].update(str(app.cp.eye.point.z))
+            popup["fx"].update(str(app.cp.focus.point.z))
+            popup["fy"].update(str(app.cp.focus.point.z))
+            popup["fz"].update(str(app.cp.focus.point.z))
+            popup["ux"].update(str(app.cp.up.vector.z))
+            popup["uy"].update(str(app.cp.up.vector.z))
+            popup["uz"].update(str(app.cp.up.vector.z))
             continue
         if popupEvent == '-edit-confirm-':
-            if validateForm(popupValues["x"], popupValues["y"], popupValues["z"], popupValues["rx"], popupValues["ry"], popupValues["rz"]) == False:
+            if validateForm(popupValues["x"], popupValues["y"], popupValues["z"], popupValues["fx"], popupValues["fy"], popupValues["fz"], popupValues["ux"], popupValues["uy"], popupValues["uz"]) == False:
                 sg.popup_error('無効な値が入力されています。')
                 continue
-            
-            updatedPose = Pose(
-                Point(
-                    float(popupValues["x"]),
-                    float(popupValues["y"]),
-                    float(popupValues["z"])
-                ), euler_to_quaternion(
-                    Vector3(
-                        math.radians(float(popupValues["rx"])),
-                        math.radians(float(popupValues["ry"])),
-                        math.radians(float(popupValues["rz"]))
-                    )
-                ))
+        
             updatedCam = Cam(
                 "", 
                 keyForPopup,
                 popupValues["_label_"],
-                updatedPose
+                Vector3(float(popupValues["x"]), float(popupValues["y"]), float(popupValues["z"])),
+                Vector3(float(popupValues["fx"]), float(popupValues["fy"]), float(popupValues["fz"])),
+                Vector3(float(popupValues["ux"]), float(popupValues["uy"]), float(popupValues["uz"])),
             )
             app.updateCam(updatedCam)
             popup.close()

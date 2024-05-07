@@ -2,33 +2,48 @@ cam_list:
   - parentKey: ""
     key: "_test_"
     label: "テスト"
-    x: 0.0
-    y: 0.0
-    z: 0.0
-    rx: 0.0
-    ry: 0.0
-    rz: 0.0
-    rw: 0.0
+    eye:
+      x: 0.0
+      y: 0.0
+      z: 30.0
+    focus:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    up:
+      x: 0.0
+      y: 0.0
+      z: 1.0
     isLabel: false
   - parentKey: ""
     key: "_test2_"
     label: "テスト2"
-    x: 0.0
-    y: 0.0
-    z: 30.0
-    rx: 0.0
-    ry: 0.0
-    rz: 0.0
-    rw: 0.0
+    eye:
+      x: 0.0
+      y: 0.0
+      z: 10.0
+    focus:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    up:
+      x: 0.0
+      y: 0.0
+      z: 1.0
     isLabel: false
   - parentKey: ""
     key: "_test3_"
     label: "テスト3"
-    x: 0.0
-    y: 0.0
-    z: 10.0
-    rx: 0.0
-    ry: 0.0
-    rz: 0.0
-    rw: 0.0
+    eye:
+      x: 0.0
+      y: 0.0
+      z: 30.0
+    focus:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    up:
+      x: 0.0
+      y: 0.0
+      z: 1.0
     isLabel: false
