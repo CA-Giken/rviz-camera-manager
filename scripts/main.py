@@ -383,7 +383,7 @@ if __name__ == "__main__":
             continue
         
         if popupEvent == '-add-confirm-':
-            if validateForm(popupValues["x"], popupValues["y"], popupValues["z"], popupValues["rx"], popupValues["ry"], popupValues["rz"]) == False:
+            if validateForm(popupValues["x"], popupValues["y"], popupValues["z"], popupValues["fx"], popupValues["fy"], popupValues["fz"], popupValues["ux"], popupValues["uy"], popupValues["uz"]) == False:
                 sg.popup_error('無効な値が入力されています。')
                 continue
             newCp = app.cp
