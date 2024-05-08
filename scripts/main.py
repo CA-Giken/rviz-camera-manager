@@ -251,32 +251,32 @@ class CameraManager:
                     },
                     "focus": {
                         "header": {
-                            "seq": cam.cp.eye.header.seq,
+                            "seq": cam.cp.focus.header.seq,
                             "stamp": {
-                                "secs": cam.cp.eye.header.stamp.secs,
-                                "nsecs": cam.cp.eye.header.stamp.nsecs
+                                "secs": cam.cp.focus.header.stamp.secs,
+                                "nsecs": cam.cp.focus.header.stamp.nsecs
                             },
-                            "frame_id": cam.cp.eye.header.frame_id
+                            "frame_id": cam.cp.focus.header.frame_id
                         },
                         "point": {
-                            "x": cam.cp.eye.point.x,
-                            "y": cam.cp.eye.point.y,
-                            "z": cam.cp.eye.point.z,
+                            "x": cam.cp.focus.point.x,
+                            "y": cam.cp.focus.point.y,
+                            "z": cam.cp.focus.point.z,
                         },
                     },
                     "up": {
                         "header": {
-                            "seq": cam.cp.eye.header.seq,
+                            "seq": cam.cp.up.header.seq,
                             "stamp": {
-                                "secs": cam.cp.eye.header.stamp.secs,
-                                "nsecs": cam.cp.eye.header.stamp.nsecs
+                                "secs": cam.cp.up.header.stamp.secs,
+                                "nsecs": cam.cp.up.header.stamp.nsecs
                             },
-                            "frame_id": cam.cp.eye.header.frame_id
+                            "frame_id": cam.cp.up.header.frame_id
                         },
                         "vector": {
-                            "x": cam.cp.eye.point.x,
-                            "y": cam.cp.eye.point.y,
-                            "z": cam.cp.eye.point.z,
+                            "x": cam.cp.up.vector.x,
+                            "y": cam.cp.up.vector.y,
+                            "z": cam.cp.up.vector.z,
                         },
                     },
                     "mouse_interaction_mode": cam.cp.mouse_interaction_mode,
