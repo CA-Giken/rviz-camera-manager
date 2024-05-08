@@ -8,6 +8,7 @@ from view_controller_msgs.msg import CameraPlacement
 from geometry_msgs.msg import Point, Vector3, Pose, Quaternion
 import uuid
 import tf
+import os
 import yaml
 
 ############################
@@ -168,7 +169,7 @@ class CameraManager:
         self.cams = cams
         return self.cams
     
-    def loadCamsFromLocal(self):
+    def loadCamsFromRosparam(self):
         cam_list = rospy.get_param("/cam_list")
         cams = []
         for _ in cam_list:
@@ -288,16 +289,13 @@ class CameraManager:
         ]
         # ROSPARAMにセット
         rospy.set_param("/cam_list", cam_list)
-        # config/config.yamlに書き出し
-        # TODO: 書き出し方法がわからん
-        # with open('config/config.yaml') as f:
-        #     yaml.dump(
-        #         { "cam_list": cam_list },
-        #         f,
-        #         default_flow_style=False,
-        #         allow_unicode=True,
-        #         sort_keys=False
-        #     )
+        # homeディレクトリのyamlに書き出し
+        # ホームディレクトリのパスを取得
+        home_directory = os.path.expanduser('~')
+        # ファイル名をホームディレクトリのパスに結合
+        filename = os.path.join(home_directory, "rviz_camera_manager.yaml")
+        yf=open(filename,"w")
+        yaml.dump({ "cam_list": cam_list } ,yf,default_flow_style=False)
     
     def updateCurrentCam(self, cp: CameraPlacement):
         self.cp = cp
@@ -320,7 +318,7 @@ if __name__ == "__main__":
     # # ツリーヘッダー消去
     # window['-tree-'].Widget['show'] = 'tree'
     
-    cams = app.loadCamsFromLocal()
+    cams = app.loadCamsFromRosparam()
     treeData = buildTree(cams)
     window["-tree-"].update(treeData)
 
