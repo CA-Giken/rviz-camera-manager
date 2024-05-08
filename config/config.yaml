@@ -2,48 +2,138 @@ cam_list:
   - parentKey: ""
     key: "_test_"
     label: "テスト"
-    eye:
-      x: 0.0
-      y: 0.0
-      z: 30.0
-    focus:
-      x: 0.0
-      y: 0.0
-      z: 0.0
-    up:
-      x: 0.0
-      y: 0.0
-      z: 1.0
     isLabel: false
+    camera_placement: 
+      interpolation_mode: 0
+      target_frame: "<Fixed Frame>"
+      time_from_start: 
+        secs: 0
+        nsecs: 0
+      eye: 
+        header: 
+          seq: 0
+          stamp: 
+            secs: 0
+            nsecs: 0
+          frame_id: ''
+        point: 
+          x: 0.35076332092285156
+          y: -5.2933149337768555
+          z: 45.02183532714844
+      focus: 
+        header: 
+          seq: 0
+          stamp: 
+            secs: 0
+            nsecs: 0
+          frame_id: ''
+        point: 
+          x: 7.841484069824219
+          y: -15.270344734191895
+          z: 23.262203216552734
+      up: 
+        header: 
+          seq: 0
+          stamp: 
+            secs: 0
+            nsecs: 0
+          frame_id: ''
+        vector: 
+          x: 0.0
+          y: 0.0
+          z: 1.0
+      mouse_interaction_mode: 1
+      interaction_disabled: True
+      allow_free_yaw_axis: True
   - parentKey: ""
     key: "_test2_"
     label: "テスト2"
-    eye:
-      x: 0.0
-      y: 0.0
-      z: 10.0
-    focus:
-      x: 0.0
-      y: 0.0
-      z: 0.0
-    up:
-      x: 0.0
-      y: 0.0
-      z: 1.0
     isLabel: false
+    camera_placement: 
+      interpolation_mode: 0
+      target_frame: "<Fixed Frame>"
+      time_from_start: 
+        secs: 0
+        nsecs: 0
+      eye: 
+        header: 
+          seq: 0
+          stamp: 
+            secs: 0
+            nsecs: 0
+          frame_id: ''
+        point: 
+          x: 0.35076332092285156
+          y: 5.2933149337768555
+          z: 5.02183532714844
+      focus: 
+        header: 
+          seq: 0
+          stamp: 
+            secs: 0
+            nsecs: 0
+          frame_id: ''
+        point: 
+          x: 7.841484069824219
+          y: 0.270344734191895
+          z: 23.262203216552734
+      up: 
+        header: 
+          seq: 0
+          stamp: 
+            secs: 0
+            nsecs: 0
+          frame_id: ''
+        vector: 
+          x: 0.0
+          y: 0.0
+          z: 1.0
+      mouse_interaction_mode: 1
+      interaction_disabled: True
+      allow_free_yaw_axis: True
   - parentKey: ""
     key: "_test3_"
     label: "テスト3"
-    eye:
-      x: 0.0
-      y: 0.0
-      z: 30.0
-    focus:
-      x: 0.0
-      y: 0.0
-      z: 0.0
-    up:
-      x: 0.0
-      y: 0.0
-      z: 1.0
     isLabel: false
+    camera_placement: 
+      interpolation_mode: 0
+      target_frame: "<Fixed Frame>"
+      time_from_start: 
+        secs: 0
+        nsecs: 0
+      eye: 
+        header: 
+          seq: 0
+          stamp: 
+            secs: 0
+            nsecs: 0
+          frame_id: ''
+        point: 
+          x: 0.35076332092285156
+          y: 55.2933149337768555
+          z: 45.02183532714844
+      focus: 
+        header: 
+          seq: 0
+          stamp: 
+            secs: 0
+            nsecs: 0
+          frame_id: ''
+        point: 
+          x: 7.841484069824219
+          y: 15.270344734191895
+          z: 23.262203216552734
+      up: 
+        header: 
+          seq: 0
+          stamp: 
+            secs: 0
+            nsecs: 0
+          frame_id: ''
+        vector: 
+          x: 0.0
+          y: 0.0
+          z: 1.0
+      mouse_interaction_mode: 1
+      interaction_disabled: True
+      allow_free_yaw_axis: True

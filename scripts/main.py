@@ -14,31 +14,6 @@ import yaml
 ### ユーティリティ start ###
 ############################
 
-# https://qiita.com/kitasenjudesign/items/e785e00736161ec238ae
-def chokkou(r,theta,phi):
-  x = r * math.sin(theta) * math.cos(phi)
-  y = r * math.sin(theta) * math.sin(phi)
-  z = r * math.cos(theta)
-  return (x,y,z)
-
-def euler_to_quaternion(euler):
-    """Convert Euler Angles to Quaternion
-
-    euler: geometry_msgs/Vector3
-    quaternion: geometry_msgs/Quaternion
-    """
-    q = tf.transformations.quaternion_from_euler(euler.x, euler.y, euler.z)
-    return Quaternion(x=q[0], y=q[1], z=q[2], w=q[3])
-    
-def quaternion_to_euler(quaternion):
-    """Convert Quaternion to Euler Angles
-
-    quarternion: geometry_msgs/Quaternion
-    euler: geometry_msgs/Vector3
-    """
-    e = tf.transformations.euler_from_quaternion((quaternion.x, quaternion.y, quaternion.z, quaternion.w))
-    return Vector3(x=e[0], y=e[1], z=e[2])
-
 # 条件に合致する最初の要素のインデックスを見つける
 def find_first_index(lst, key, value):
     for index, item in enumerate(lst):
@@ -54,7 +29,7 @@ def build():
     contents = [
         posTable(readonly=True), 
         [
-            sg.Tree(key="-tree-", data=sg.TreeData(), headings=[], enable_events=True, show_expanded=True, col0_width=34)
+            sg.Tree(key="-tree-", data=sg.TreeData(), headings=buildTreeHeadings(), enable_events=True, show_expanded=True, col0_width=24, auto_size_columns=False, col_widths=[6, 6, 6])
         ], 
         [
             sg.Button(button_text="Add", key="-add-"), sg.Button(button_text="Edit", key="-edit-"), sg.Button(button_text="Remove", key="-remove-")
@@ -72,10 +47,13 @@ def posTable(readonly: bool):
     ], 
     return table
 
+def buildTreeHeadings():
+    return ["X", "Y", "Z"]
+
 def buildTree(cams: "list[Cam]"):
     treeData = sg.TreeData()
     for cam in cams:
-        treeData.insert(cam.parentKey, cam.key, cam.label, [])
+        treeData.insert(cam.parentKey, cam.key, cam.label, [str(cam.cp.eye.point.x), str(cam.cp.eye.point.y), str(cam.cp.eye.point.z)])
     return treeData
 
 def buildAdd():
@@ -128,51 +106,15 @@ def validateForm(*args):
 ######################
 
 class Cam(dict):
-    def __init__(self, parentKey: str, key: str, label: str, eye: Vector3, focus: Vector3, up: Vector3, isLabel = False):
+    def __init__(self, parentKey: str, key: str, label: str, cp: CameraPlacement, isLabel = False):
         super().__init__()
         self.__dict__ = self
         self.parentKey = parentKey
         self.key = key
         self.label = label
-        self.cp = CameraPlacement()
-        
-        frame_id = "camera_frame"
-        self.cp.eye.point.x = eye.x
-        self.cp.eye.point.y = eye.y
-        self.cp.eye.point.z = eye.z
-        self.cp.eye.header.frame_id = frame_id
-        self.cp.focus.point.x = focus.x
-        self.cp.focus.point.y = focus.y
-        self.cp.focus.point.z = focus.z
-        self.cp.focus.header.frame_id = frame_id
-        self.cp.up.vector.x = up.x
-        self.cp.up.vector.y = up.y
-        self.cp.up.vector.z = up.z
-        self.cp.up.header.frame_id = frame_id
         self.isLabel = isLabel
         
-    def toCameraPlacement(self):
-        cp = CameraPlacement()
-        
-        frame_id = "camera_frame"
-        
-        p = self.pose.position
-        cp.eye.point = p
-        cp.eye.header.frame_id = frame_id
-        
-        forward = tf.transformations.quaternion_matrix([self.pose.orientation.x, self.pose.orientation.y, self.pose.orientation.z, self.pose.orientation.w])[:3, 2]
-        d = 1.0
-        f = Point(p.x - forward[0] * d, p.y - forward[1] * d, p.z - forward[2] * d)
-        cp.focus.point = f
-        cp.focus.header.frame_id = frame_id
-        
-        up = tf.transformations.quaternion_matrix([self.pose.orientation.x, self.pose.orientation.y, self.pose.orientation.z, self.pose.orientation.w])[:3, 1]
-        cp.up.vector.x = up[0]
-        cp.up.vector.y = up[1]
-        cp.up.vector.z = up[2]
-        cp.up.header.frame_id = frame_id
-        
-        return cp
+        self.cp = cp
 
 class CameraManager:
     def __init__(self):
@@ -228,16 +170,47 @@ class CameraManager:
     
     def loadCamsFromLocal(self):
         cam_list = rospy.get_param("/cam_list")
-        
-        cams = [Cam(
-            _["parentKey"],
-            _["key"],
-            _["label"],
-            Vector3(_["eye"]["x"], _["eye"]["y"], _["eye"]["z"]),
-            Vector3(_["focus"]["x"], _["focus"]["y"], _["focus"]["z"]),
-            Vector3(_["up"]["x"], _["up"]["y"], _["up"]["z"]),
-            _["isLabel"]
-            ) for _ in cam_list]
+        cams = []
+        for _ in cam_list:
+            cp = CameraPlacement()
+            
+            cp.interpolation_mode = _["camera_placement"]["interpolation_mode"]
+            cp.target_frame = _["camera_placement"]["target_frame"]
+            cp.time_from_start.secs = _["camera_placement"]["time_from_start"]["secs"]
+            cp.time_from_start.nsecs = _["camera_placement"]["time_from_start"]["nsecs"]
+            cp.eye.header.seq = _["camera_placement"]["eye"]["header"]["seq"]
+            cp.eye.header.stamp.secs = _["camera_placement"]["eye"]["header"]["stamp"]["secs"]
+            cp.eye.header.stamp.nsecs = _["camera_placement"]["eye"]["header"]["stamp"]["nsecs"]
+            cp.eye.header.frame_id = _["camera_placement"]["eye"]["header"]["frame_id"]
+            cp.eye.point.x = _["camera_placement"]["eye"]["point"]["x"]
+            cp.eye.point.y = _["camera_placement"]["eye"]["point"]["y"]
+            cp.eye.point.z = _["camera_placement"]["eye"]["point"]["z"]
+            cp.focus.header.seq = _["camera_placement"]["focus"]["header"]["seq"]
+            cp.focus.header.stamp.secs = _["camera_placement"]["focus"]["header"]["stamp"]["secs"]
+            cp.focus.header.stamp.nsecs = _["camera_placement"]["focus"]["header"]["stamp"]["nsecs"]
+            cp.focus.header.frame_id = _["camera_placement"]["focus"]["header"]["frame_id"]
+            cp.focus.point.x = _["camera_placement"]["focus"]["point"]["x"]
+            cp.focus.point.y = _["camera_placement"]["focus"]["point"]["y"]
+            cp.focus.point.z = _["camera_placement"]["focus"]["point"]["z"]
+            cp.up.header.seq = _["camera_placement"]["up"]["header"]["seq"]
+            cp.up.header.stamp.secs = _["camera_placement"]["up"]["header"]["stamp"]["secs"]
+            cp.up.header.stamp.nsecs = _["camera_placement"]["up"]["header"]["stamp"]["nsecs"]
+            cp.up.header.frame_id = _["camera_placement"]["up"]["header"]["frame_id"]
+            cp.up.vector.x = _["camera_placement"]["up"]["vector"]["x"]
+            cp.up.vector.y = _["camera_placement"]["up"]["vector"]["y"]
+            cp.up.vector.z = _["camera_placement"]["up"]["vector"]["z"]
+            cp.mouse_interaction_mode = _["camera_placement"]["mouse_interaction_mode"]
+            cp.interaction_disabled = _["camera_placement"]["interaction_disabled"]
+            cp.allow_free_yaw_axis = _["camera_placement"]["allow_free_yaw_axis"]
+            
+            cam = Cam(
+                _["parentKey"],
+                _["key"],
+                _["label"],
+                cp,
+                _["isLabel"]           
+            )
+            cams.append(cam)
         self.cams = cams
         return self.cams
     
@@ -251,16 +224,65 @@ class CameraManager:
                 "parentKey" : cam.parentKey,
                 "key": cam.key,
                 "label": cam.label,
-                "x": cam.cp.eye.point.x,
-                "y": cam.cp.eye.point.y,
-                "z": cam.cp.eye.point.z,
-                "fx": cam.cp.focus.point.x,
-                "fy": cam.cp.focus.point.y,
-                "fz": cam.cp.focus.point.z,
-                "ux": cam.cp.up.vector.x,
-                "uy": cam.cp.up.vector.y,
-                "uz": cam.cp.up.vector.z,
-                "isLabel": cam.isLabel
+                "isLabel": cam.isLabel,
+                
+                # CameraPlacementをそのまま保存
+                "camera_placement": {
+                    "interpolation_mode": cam.cp.interpolation_mode,
+                    "target_frame": cam.cp.target_frame,
+                    "time_from_start": {
+                        "secs": cam.cp.time_from_start.secs,
+                        "nsecs": cam.cp.time_from_start.nsecs
+                    },
+                    "eye": {
+                        "header": {
+                            "seq": cam.cp.eye.header.seq,
+                            "stamp": {
+                                "secs": cam.cp.eye.header.stamp.secs,
+                                "nsecs": cam.cp.eye.header.stamp.nsecs
+                            },
+                            "frame_id": cam.cp.eye.header.frame_id
+                        },
+                        "point": {
+                            "x": cam.cp.eye.point.x,
+                            "y": cam.cp.eye.point.y,
+                            "z": cam.cp.eye.point.z,
+                        },
+                    },
+                    "focus": {
+                        "header": {
+                            "seq": cam.cp.eye.header.seq,
+                            "stamp": {
+                                "secs": cam.cp.eye.header.stamp.secs,
+                                "nsecs": cam.cp.eye.header.stamp.nsecs
+                            },
+                            "frame_id": cam.cp.eye.header.frame_id
+                        },
+                        "point": {
+                            "x": cam.cp.eye.point.x,
+                            "y": cam.cp.eye.point.y,
+                            "z": cam.cp.eye.point.z,
+                        },
+                    },
+                    "up": {
+                        "header": {
+                            "seq": cam.cp.eye.header.seq,
+                            "stamp": {
+                                "secs": cam.cp.eye.header.stamp.secs,
+                                "nsecs": cam.cp.eye.header.stamp.nsecs
+                            },
+                            "frame_id": cam.cp.eye.header.frame_id
+                        },
+                        "vector": {
+                            "x": cam.cp.eye.point.x,
+                            "y": cam.cp.eye.point.y,
+                            "z": cam.cp.eye.point.z,
+                        },
+                    },
+                    "mouse_interaction_mode": cam.cp.mouse_interaction_mode,
+                    "interaction_disabled": cam.cp.interaction_disabled,
+                    "allow_free_yaw_axis": cam.cp.allow_free_yaw_axis
+                }
             }
             for cam in self.cams
         ]
@@ -292,11 +314,11 @@ class CameraManager:
 if __name__ == "__main__":
     app = CameraManager()
     
-    contents =  build()
+    contents = build()
     window = sg.Window("Rviz Camera Manager", contents, finalize=True)
     
-    # ツリーヘッダー消去
-    window['-tree-'].Widget['show'] = 'tree'
+    # # ツリーヘッダー消去
+    # window['-tree-'].Widget['show'] = 'tree'
     
     cams = app.loadCamsFromLocal()
     treeData = buildTree(cams)
@@ -315,11 +337,11 @@ if __name__ == "__main__":
         window["x"].update(str(app.cp.eye.point.x))
         window["y"].update(str(app.cp.eye.point.y))
         window["z"].update(str(app.cp.eye.point.z))
-        window["fx"].update(str(app.cp.focus.point.z))
-        window["fy"].update(str(app.cp.focus.point.z))
+        window["fx"].update(str(app.cp.focus.point.x))
+        window["fy"].update(str(app.cp.focus.point.y))
         window["fz"].update(str(app.cp.focus.point.z))
-        window["ux"].update(str(app.cp.up.vector.z))
-        window["uy"].update(str(app.cp.up.vector.z))
+        window["ux"].update(str(app.cp.up.vector.x))
+        window["uy"].update(str(app.cp.up.vector.y))
         window["uz"].update(str(app.cp.up.vector.z))
 
         
@@ -352,11 +374,11 @@ if __name__ == "__main__":
             popup["x"].update(str(app.cp.eye.point.x))
             popup["y"].update(str(app.cp.eye.point.y))
             popup["z"].update(str(app.cp.eye.point.z))
-            popup["fx"].update(str(app.cp.focus.point.z))
-            popup["fy"].update(str(app.cp.focus.point.z))
+            popup["fx"].update(str(app.cp.focus.point.x))
+            popup["fy"].update(str(app.cp.focus.point.y))
             popup["fz"].update(str(app.cp.focus.point.z))
-            popup["ux"].update(str(app.cp.up.vector.z))
-            popup["uy"].update(str(app.cp.up.vector.z))
+            popup["ux"].update(str(app.cp.up.vector.x))
+            popup["uy"].update(str(app.cp.up.vector.y))
             popup["uz"].update(str(app.cp.up.vector.z))
             continue
         
@@ -364,13 +386,21 @@ if __name__ == "__main__":
             if validateForm(popupValues["x"], popupValues["y"], popupValues["z"], popupValues["rx"], popupValues["ry"], popupValues["rz"]) == False:
                 sg.popup_error('無効な値が入力されています。')
                 continue
+            newCp = app.cp
+            newCp.eye.point.x = float(popupValues["x"])
+            newCp.eye.point.y = float(popupValues["y"])
+            newCp.eye.point.z = float(popupValues["z"])
+            newCp.focus.point.x = float(popupValues["fx"])
+            newCp.focus.point.y = float(popupValues["fy"])
+            newCp.focus.point.z = float(popupValues["fz"])
+            newCp.up.vector.x = float(popupValues["ux"])
+            newCp.up.vector.y = float(popupValues["uy"])
+            newCp.up.vector.z = float(popupValues["uz"])
             newCam = Cam(
-                "", 
+                "", # parentKeyは今後使うかも 
                 uuid.uuid4().hex,
                 popupValues["_label_"],
-                Vector3(float(popupValues["x"]), float(popupValues["y"]), float(popupValues["z"])),
-                Vector3(float(popupValues["fx"]), float(popupValues["fy"]), float(popupValues["fz"])),
-                Vector3(float(popupValues["ux"]), float(popupValues["uy"]), float(popupValues["uz"])),
+                newCp
             )
             app.addCam(newCam)
             popup.close()
@@ -397,25 +427,34 @@ if __name__ == "__main__":
             popup["x"].update(str(app.cp.eye.point.x))
             popup["y"].update(str(app.cp.eye.point.y))
             popup["z"].update(str(app.cp.eye.point.z))
-            popup["fx"].update(str(app.cp.focus.point.z))
-            popup["fy"].update(str(app.cp.focus.point.z))
+            popup["fx"].update(str(app.cp.focus.point.x))
+            popup["fy"].update(str(app.cp.focus.point.y))
             popup["fz"].update(str(app.cp.focus.point.z))
-            popup["ux"].update(str(app.cp.up.vector.z))
-            popup["uy"].update(str(app.cp.up.vector.z))
+            popup["ux"].update(str(app.cp.up.vector.x))
+            popup["uy"].update(str(app.cp.up.vector.y))
             popup["uz"].update(str(app.cp.up.vector.z))
             continue
         if popupEvent == '-edit-confirm-':
             if validateForm(popupValues["x"], popupValues["y"], popupValues["z"], popupValues["fx"], popupValues["fy"], popupValues["fz"], popupValues["ux"], popupValues["uy"], popupValues["uz"]) == False:
                 sg.popup_error('無効な値が入力されています。')
                 continue
-        
+            
+            updatedCp = app.cp
+            updatedCp.eye.point.x = float(popupValues["x"])
+            updatedCp.eye.point.y = float(popupValues["y"])
+            updatedCp.eye.point.z = float(popupValues["z"])
+            updatedCp.focus.point.x = float(popupValues["fx"])
+            updatedCp.focus.point.y = float(popupValues["fy"])
+            updatedCp.focus.point.z = float(popupValues["fz"])
+            updatedCp.up.vector.x = float(popupValues["ux"])
+            updatedCp.up.vector.y = float(popupValues["uy"])
+            updatedCp.up.vector.z = float(popupValues["uz"])
+                    
             updatedCam = Cam(
-                "", 
+                "", # parentKeyは今後使うかも 
                 keyForPopup,
                 popupValues["_label_"],
-                Vector3(float(popupValues["x"]), float(popupValues["y"]), float(popupValues["z"])),
-                Vector3(float(popupValues["fx"]), float(popupValues["fy"]), float(popupValues["fz"])),
-                Vector3(float(popupValues["ux"]), float(popupValues["uy"]), float(popupValues["uz"])),
+                updatedCp
             )
             app.updateCam(updatedCam)
             popup.close()
